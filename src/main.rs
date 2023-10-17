@@ -27,7 +27,7 @@ async fn echo(req_body: String) -> impl Responder {
 }
 #[post("/chat")]
 async fn chat() -> HttpResponse {
-    let prompt = AskPrompt {
+    let prompt = AskPrompt { 
         model: "llama2:13b".to_owned(),
         prompt: "Please provide a Array of 8 ingredients for a dinner recipe. Example:  [\"ingredient1\", \"ingredient2\", \"ingredient3\", \"ingredient4\", \"ingredient5\", \"ingredient6\", \"ingredient7\", \"ingredient8\"]".to_owned(),
         stream : false // Ollama's API endpoints such as /api/generate now support returning data in one single response. Set the stream parameter to false in the API request:
