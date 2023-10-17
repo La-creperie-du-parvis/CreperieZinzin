@@ -1,7 +1,7 @@
 use actix_web::{get, post, App, HttpResponse, HttpServer, Responder};
-use reqwest;
 
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 #[derive(Serialize, Deserialize)]
 struct AskPrompt {
@@ -36,6 +36,7 @@ async fn chat() -> HttpResponse {
     let prompt_to_json = serde_json::to_string(&prompt).unwrap();
 
     let client = reqwest::Client::new();
+
     let res = client
         .post("http://localhost:11434/api/generate")
         .body(prompt_to_json)
@@ -47,22 +48,11 @@ async fn chat() -> HttpResponse {
             .text()
             .await
             .unwrap_or_else(|_| "Failed to read response body".to_string());
-        let responses: Vec<&str> = body.split('}').collect();
-        let concatenated_responses = responses
-            .iter()
-            .map(|response| {
-                let response = format!("{}{}", response, '}');
-                let parsed: serde_json::Value =
-                    serde_json::from_str(&response).unwrap_or_else(|_| serde_json::json!({}));
-                let response_value = parsed["response"].as_str().unwrap_or("");
-                response_value.to_string()
-            })
-            .collect::<Vec<String>>()
-            .join("");
 
-        let test_json = serde_json::to_string(&concatenated_responses).unwrap();
-        println!("{:?}", test_json);
-        return HttpResponse::Ok().body(concatenated_responses);
+        let body_parsed_to_json: Value = serde_json::from_str(&body).unwrap();
+        let get_response_from_body: Option<&str> = body_parsed_to_json["response"].as_str();
+
+        return HttpResponse::Ok().body(String::from(get_response_from_body.unwrap()));
     }
 
     HttpResponse::InternalServerError().body("Error")
