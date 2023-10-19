@@ -19,9 +19,10 @@ async fn index() -> impl Responder {
 async fn echo(req_body: String) -> impl Responder {
     HttpResponse::Ok().body(req_body)
 }
+
 #[post("/chat")]
 async fn chat() -> HttpResponse {
-    let prompt = AskPrompt { 
+    let prompt = AskPrompt {
         model: "llama2:13b".to_owned(),
         prompt: "Please provide a Array of 8 ingredients for a dinner recipe. Example:  [\"ingredient1\", \"ingredient2\", \"ingredient3\", \"ingredient4\", \"ingredient5\", \"ingredient6\", \"ingredient7\", \"ingredient8\"]".to_owned(),
         stream : false // Ollama's API endpoints such as /api/generate now support returning data in one single response. Set the stream parameter to false in the API request:
@@ -35,7 +36,7 @@ async fn chat() -> HttpResponse {
         .post("http://localhost:11434/api/generate")
         .body(prompt_to_json)
         .send()
-        .await;  
+        .await;
 
     if let Ok(response) = res {
         let body = response
@@ -51,10 +52,9 @@ async fn chat() -> HttpResponse {
 
     HttpResponse::InternalServerError().body("Error")
 }
-           
 
 #[actix_web::main]
-async fn main() -> std::io::Result<()> { 
+async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
         App::new().service(index).service(chat)
         // .route("/chat", web::post().to(chat))
@@ -63,5 +63,3 @@ async fn main() -> std::io::Result<()> {
     .run()
     .await
 }
-
- 
