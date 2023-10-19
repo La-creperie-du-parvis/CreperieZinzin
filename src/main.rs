@@ -10,12 +10,6 @@ struct AskPrompt {
     stream: bool,
 }
 
-#[derive(Serialize, Deserialize)]
-struct AnswerPrompt {
-    response: String,
-    ingredients: String,
-}
-
 #[get("/")]
 async fn index() -> impl Responder {
     HttpResponse::Ok().body("Hello world!")
@@ -41,7 +35,7 @@ async fn chat() -> HttpResponse {
         .post("http://localhost:11434/api/generate")
         .body(prompt_to_json)
         .send()
-        .await;
+        .await;  
 
     if let Ok(response) = res {
         let body = response
@@ -57,9 +51,10 @@ async fn chat() -> HttpResponse {
 
     HttpResponse::InternalServerError().body("Error")
 }
+           
 
 #[actix_web::main]
-async fn main() -> std::io::Result<()> {
+async fn main() -> std::io::Result<()> { 
     HttpServer::new(|| {
         App::new().service(index).service(chat)
         // .route("/chat", web::post().to(chat))
@@ -68,3 +63,5 @@ async fn main() -> std::io::Result<()> {
     .run()
     .await
 }
+
+ 
