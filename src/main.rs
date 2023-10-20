@@ -22,24 +22,24 @@ async fn echo(req_body: String) -> impl Responder {
 
 #[post("/chat")]
 async fn chat() -> HttpResponse {
-    let prompt = AskPrompt {
+    let prompt: AskPrompt = AskPrompt {
         model: "llama2:13b".to_owned(),
         prompt: "Please provide a Array of 8 ingredients for a dinner recipe. Example:  [\"ingredient1\", \"ingredient2\", \"ingredient3\", \"ingredient4\", \"ingredient5\", \"ingredient6\", \"ingredient7\", \"ingredient8\"]".to_owned(),
         stream : false // Ollama's API endpoints such as /api/generate now support returning data in one single response. Set the stream parameter to false in the API request:
     };
 
-    let prompt_to_json = serde_json::to_string(&prompt).unwrap();
+    let prompt_to_json: String = serde_json::to_string(&prompt).unwrap();
 
-    let client = reqwest::Client::new();
+    let client: reqwest::Client = reqwest::Client::new();
 
-    let res = client
+    let res: Result<reqwest::Response, reqwest::Error> = client
         .post("http://localhost:11434/api/generate")
         .body(prompt_to_json)
         .send()
         .await;
 
     if let Ok(response) = res {
-        let body = response
+        let body: String = response
             .text()
             .await
             .unwrap_or_else(|_| "Failed to read response body".to_string());
