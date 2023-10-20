@@ -1,4 +1,4 @@
-use actix_web::{get, post, App, HttpResponse, HttpServer, Responder};
+use actix_web::{post, App, HttpResponse, HttpServer};
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -8,16 +8,6 @@ struct AskPrompt {
     model: String,
     prompt: String,
     stream: bool,
-}
-
-#[get("/")]
-async fn index() -> impl Responder {
-    HttpResponse::Ok().body("Hello world!")
-}
-
-#[post("/echo")]
-async fn echo(req_body: String) -> impl Responder {
-    HttpResponse::Ok().body(req_body)
 }
 
 #[post("/chat")]
@@ -56,7 +46,7 @@ async fn chat() -> HttpResponse {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
-        App::new().service(index).service(chat)
+        App::new().service(chat)
         // .route("/chat", web::post().to(chat))
     })
     .bind(("127.0.0.1", 8080))?
