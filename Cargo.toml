@@ -17,16 +17,4 @@ tokio = { version = "1", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
-prisma-client-rust = { git = "https://github.com/Brendonovich/prisma-client-rust", tag = "0.6.10" }
-
-
-# [profile.release]
-# opt-level = 3
-# debug = false
-# rpath = false
-# lto = "fat"
-# debug-assertions = false
-# codegen-units = 1
-# panic = 'abort'
-# incremental = false
-# overflow-checks = true
+prisma-client-rust = { git = "https://github.com/Brendonovich/prisma-client-rust", tag = "0.6.9" }
