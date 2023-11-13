@@ -67,7 +67,7 @@ async fn random_recipe(user_choice: web::Json<UserChoice>) -> HttpResponse {
     let res: Result<reqwest::Response, reqwest::Error> = client
         .post("http://localhost:11434/api/generate")
         .json(&serde_json::json!({
-            "model": "llama2:7b",
+            "model": "mistral",
             "prompt": prompt_to_json,
             "stream": false,
         }))
@@ -105,7 +105,7 @@ async fn chat(info: web::Json<AskPrompt>, context: web::Data<Addr<ChatContext>>)
     let res: Result<reqwest::Response, reqwest::Error> = client
         .post("http://localhost:11434/api/generate")
         .json(&serde_json::json!({
-            "model": "llama2:7b",
+            "model": "mistral",
             "prompt": prompt_to_json,
             "stream": false,
         }))
