@@ -27,6 +27,14 @@ impl ChatContext {
             context: String::new(),
         }
     }
+
+    fn update_context(&mut self, new_message: String) {
+        if new_message.is_empty() {
+            self.context.clear();
+        } else {
+            self.context = new_message;
+        }
+    }
 }
 
 #[derive(Message)]
@@ -49,9 +57,10 @@ impl Handler<SetContext> for ChatContext {
     type Result = ();
 
     fn handle(&mut self, msg: SetContext, _ctx: &mut Context<Self>) -> Self::Result {
-        self.context = msg.0;
+        self.update_context(msg.0);
     }
 }
+
 #[post("/random-recipe")]
 async fn random_recipe(user_choice: web::Json<UserChoice>) -> HttpResponse {
     let user_choice: i32 = user_choice.nb_of_ingredients;
@@ -65,9 +74,9 @@ async fn random_recipe(user_choice: web::Json<UserChoice>) -> HttpResponse {
     let client: reqwest::Client = reqwest::Client::new();
 
     let res: Result<reqwest::Response, reqwest::Error> = client
-        .post("http://localhost:11434/api/generate")
+        .post("http://127.0.0.1:11434/api/generate")
         .json(&serde_json::json!({
-            "model": "mistral",
+            "model": "llama2:13b",
             "prompt": prompt_to_json,
             "stream": false,
         }))
@@ -91,11 +100,13 @@ async fn random_recipe(user_choice: web::Json<UserChoice>) -> HttpResponse {
 
 #[post("/chat")]
 async fn chat(info: web::Json<AskPrompt>, context: web::Data<Addr<ChatContext>>) -> HttpResponse {
-    let context_addr = context.get_ref().clone();
-    let context = context_addr.send(GetContext).await.unwrap();
-
+    let context_addr: Addr<ChatContext> = context.get_ref().clone();
     let prompt: AskPrompt = AskPrompt {
-        prompt: format!("{} {}", context, info.prompt),
+        prompt: format!(
+            "{} {}",
+            context_addr.send(GetContext).await.unwrap(),
+            info.prompt
+        ),
     };
 
     let prompt_to_json: String = serde_json::to_string(&prompt).unwrap();
@@ -103,35 +114,40 @@ async fn chat(info: web::Json<AskPrompt>, context: web::Data<Addr<ChatContext>>)
     let client: reqwest::Client = reqwest::Client::new();
 
     let res: Result<reqwest::Response, reqwest::Error> = client
-        .post("http://localhost:11434/api/generate")
+        .post("http://127.0.0.1:11434/api/generate")
         .json(&serde_json::json!({
-            "model": "mistral",
+            "model": "llama2:13b",
             "prompt": prompt_to_json,
             "stream": false,
         }))
         .send()
         .await;
 
-    if let Ok(response) = res {
-        let body: String = response
-            .text()
-            .await
-            .unwrap_or_else(|_| "Failed to read response body".to_string());
+    match res {
+        Ok(response) => {
+            let body: String = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Failed to read response body".to_string());
 
-        let body_parsed_to_json: Value = serde_json::from_str(&body).unwrap();
-        let get_response_from_body: Option<&str> = body_parsed_to_json["response"].as_str();
+            let body_parsed_to_json: Value = serde_json::from_str(&body).unwrap();
+            let get_response_from_body: Option<&str> = body_parsed_to_json["response"].as_str();
 
-        context_addr.do_send(SetContext(String::from(get_response_from_body.unwrap())));
+            let response = String::from(get_response_from_body.unwrap());
+            context_addr.do_send(SetContext(response.clone())); // Update the context with the response
 
-        return HttpResponse::Ok().body(String::from(get_response_from_body.unwrap()));
+            return HttpResponse::Ok().body(response);
+        }
+        Err(e) => {
+            println!("Error: {}", e);
+            return HttpResponse::InternalServerError().body("Error");
+        }
     }
-
-    HttpResponse::InternalServerError().body("Error")
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let context = ChatContext::new().start();
+    let context: Addr<ChatContext> = ChatContext::new().start();
 
     HttpServer::new(move || {
         App::new()
